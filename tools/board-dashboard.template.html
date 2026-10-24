@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arsenal Team Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg:        #f2f1ec;
+  --surface:   #fffefb;
+  --surface-2: #f7f6f1;
+  --line:      #dedbd1;
+  --line-soft: #e9e7df;
+  --ink:       #191b18;
+  --ink-mid:   #4d514c;
+  --ink-dim:   #767b74;
+  --accent:    #14605a;
+  --accent-in: #ffffff;
+
+  --todo:          #6b7280;
+  --in-progress:   #1d4ed8;
+  --blocked:       #b3261e;
+  --tester-review: #a85806;
+  --human-review:  #7c3aed;
+  --staging:       #0369a1;
+  --shipped:       #0f766e;
+  --done:          #17703a;
+  --unknown:       #8a8f88;
+  --review:        #a85806;   /* retired 2026-09-24; kept so a legacy ticket still renders */
+
+  --radius: 7px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #14161a;
+    --surface:   #1b1e23;
+    --surface-2: #21252b;
+    --line:      #31363e;
+    --line-soft: #272c33;
+    --ink:       #eceef0;
+    --ink-mid:   #b3b8bf;
+    --ink-dim:   #868d96;
+    --accent:    #4fb3a5;
+    --accent-in: #10241f;
+
+    --todo:          #9aa2ad;
+    --in-progress:   #7aa2f7;
+    --blocked:       #f2837c;
+    --tester-review: #e0a35c;
+    --human-review:  #c4a4f5;
+    --staging:       #6fbce0;
+    --shipped:       #5ec9bd;
+    --done:          #6fc98d;
+    --unknown:       #7d848c;
+    --review:        #e0a35c;   /* retired 2026-09-24 */
+  }
+}
+:root[data-theme="dark"] {
+  --bg:        #14161a;
+  --surface:   #1b1e23;
+  --surface-2: #21252b;
+  --line:      #31363e;
+  --line-soft: #272c33;
+  --ink:       #eceef0;
+  --ink-mid:   #b3b8bf;
+  --ink-dim:   #868d96;
+  --accent:    #4fb3a5;
+  --accent-in: #10241f;
+
+  --todo:          #9aa2ad;
+  --in-progress:   #7aa2f7;
+  --blocked:       #f2837c;
+  --tester-review: #e0a35c;
+  --human-review:  #c4a4f5;
+  --staging:       #6fbce0;
+  --shipped:       #5ec9bd;
+  --done:          #6fc98d;
+  --unknown:       #7d848c;
+  --review:        #e0a35c;   /* retired 2026-09-24 */
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.55 var(--sans);
+  padding-inline: var(--gutter);
+  padding-block: clamp(24px, 5vw, 52px);
+}
+.wrap { max-width: 1120px; margin-inline: auto; display: flex; flex-direction: column; gap: 30px; }
+
+/* ---- header ---- */
+header { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-end; justify-content: space-between; }
+h1 {
+  margin: 0;
+  font: 700 clamp(26px, 5vw, 36px)/1.05 var(--sans);
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+h1 .rule { color: var(--accent); }
+.meta { font: 400 12.5px/1.5 var(--mono); color: var(--ink-dim); text-align: right; }
+.meta b { color: var(--ink-mid); font-weight: 500; }
+
+/* ---- staleness ----
+   The page is generated, so it cannot refresh itself and a browser reload
+   re-renders the same bytes. It CAN know its own age, so it says so rather
+   than quietly showing yesterday's board as though it were now. */
+.stale {
+  border: 1px solid var(--tester-review);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 13px 16px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
+}
+.stale b { color: var(--tester-review); }
+.stale code {
+  font: 500 12.5px/1.6 var(--mono);
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+  border-radius: 5px; padding: 2px 7px; color: var(--ink);
+}
+
+/* ---- the alert strip ---- */
+.strip {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--blocked);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 15px 18px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.strip h2 { margin: 0; font: 600 13px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--blocked); }
+.strip ul { margin: 0; padding-left: 18px; color: var(--ink-mid); }
+.strip li + li { margin-top: 4px; }
+.strip .ok { color: var(--done); }
+
+/* ---- counts ---- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+.tile {
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-top: 2px solid var(--c, var(--todo));
+  border-radius: var(--radius); padding: 13px 15px;
+}
+.tile .n { font: 600 27px/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--c, var(--ink)); }
+.tile .k { margin-top: 5px; font: 500 11.5px/1 var(--sans); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-dim); }
+
+/* ---- sections ---- */
+section > h2 {
+  margin: 0 0 3px;
+  font: 600 17px/1.3 var(--sans);
+  letter-spacing: -0.01em;
+}
+section > .sub { margin: 0 0 14px; color: var(--ink-dim); font-size: 13.5px; max-width: 72ch; }
+section > .sub code { font: 500 12.5px var(--mono); color: var(--ink-mid); }
+
+/* ---- ticket rows ---- */
+.rows { display: flex; flex-direction: column; border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.row { display: grid; grid-template-columns: 74px 1fr auto; gap: 8px 14px; align-items: baseline; padding: 11px 15px; }
+.row + .row { border-top: 1px solid var(--line-soft); }
+.row:nth-child(even) { background: var(--surface-2); }
+.row .id { font: 500 13px/1.5 var(--mono); color: var(--ink-dim); }
+.row .t { min-width: 0; overflow-wrap: anywhere; }
+.row .t b { font-weight: 500; }
+.row .t small { display: block; margin-top: 2px; color: var(--ink-dim); font: 400 12px/1.45 var(--mono); overflow-wrap: anywhere; }
+.chip {
+  justify-self: end;
+  font: 600 10.5px/1 var(--sans); letter-spacing: .07em; text-transform: uppercase;
+  color: var(--c); border: 1px solid currentColor; border-radius: 999px;
+  padding: 4px 9px; white-space: nowrap; opacity: .92;
+}
+
+/* ---- filters ---- */
+.filters { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.filters button {
+  font: 500 12.5px/1 var(--sans); color: var(--ink-mid);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 7px 13px; cursor: pointer;
+}
+.filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-in); }
+.filters button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- worktrees ---- */
+.scroll { overflow-x: auto; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 10px 15px; white-space: nowrap; }
+th { font: 600 11px/1 var(--sans); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-dim); border-bottom: 1px solid var(--line); }
+tbody tr + tr td { border-top: 1px solid var(--line-soft); }
+td.path, td.br { font-family: var(--mono); font-size: 12.5px; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.warn { color: var(--tester-review); font-weight: 500; }
+.pipe { display: block; }
+.pipe-head { font-size: 15px; margin-bottom: 2px; }
+.pipe-why { opacity: .75; margin-bottom: 8px; max-width: 70ch; }
+.pipe-ids { margin-bottom: 8px; line-height: 2; }
+.pipe-ids code { background: var(--staging); color: #fff; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+.pipe-c { font-size: 12.5px; opacity: .8; }
+.pipe-c code { opacity: .7; }
+.calm { color: var(--ink-dim); }
+
+/* ---- disclosure (collapsed ticket table) ---- */
+button.disclosure {
+  font: 600 17px/1.3 var(--sans); letter-spacing: -0.01em; color: var(--ink);
+  background: none; border: none; padding: 0; margin: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+button.disclosure:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.disclosure-arrow { display: inline-block; font-size: 12px; transition: transform .12s ease; color: var(--ink-dim); }
+button.disclosure[aria-expanded="true"] .disclosure-arrow { transform: rotate(90deg); }
+
+/* ---- feature rows ---- */
+.feat-you { color: var(--human-review); font-weight: 600; }
+.feat-dash { color: var(--ink-dim); }
+
+footer { color: var(--ink-dim); font-size: 12.5px; border-top: 1px solid var(--line-soft); padding-top: 16px; }
+footer code { font-family: var(--mono); color: var(--ink-mid); }
+
+@media (max-width: 560px) {
+  .row { grid-template-columns: 1fr auto; }
+  .row .id { grid-column: 1; }
+  .row .t { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Arsenal <span class="rule">Team Board</span></h1>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div class="stale" id="stale" hidden></div>
+
+  <div class="strip" id="strip" hidden></div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section id="features-section" hidden>
+    <h2>Features</h2>
+    <p class="sub">Grouped from every ticket's <code>- feature:</code> line by <code>tools/board-features.mjs</code> (T-271) — the same rules <code>node tools/board.mjs features</code> uses, so the two can never disagree. <b>YOU:</b> is the single next thing that needs a person; a dash means an agent (or nobody) owns the next step.</p>
+    <div class="rows" id="features"></div>
+  </section>
+
+  <section id="pipeline-section" hidden>
+    <h2>Where the work actually is</h2>
+    <p class="sub">Read from git, not from ticket status. <b>origin/main is production; origin/staging is the staging site.</b> Amplify builds from the remote, so a commit that has not been pushed is in no environment at all, however finished it is.</p>
+    <div class="rows" id="pipeline"></div>
+  </section>
+
+  <section id="stalled-section" hidden>
+    <h2>Stalled</h2>
+    <p class="sub">From <code>tools/board-sweep.mjs</code>, which derives these from git rather than from ticket fields &mdash; branch exists, worktree exists, tree is dirty, work already merged. Those cannot be forgotten into being wrong; a status field can. <b>The sweep proposes and never closes anything.</b></p>
+    <div class="rows" id="stalled"></div>
+  </section>
+
+  <section>
+    <h2><button type="button" id="tickets-toggle" class="disclosure" aria-expanded="false">Tickets <span class="disclosure-arrow">&#9656;</span></button></h2>
+    <p class="sub">Everything on the shared board, collapsed by default now that <b>Features</b> above is the lead view. <b>Purple is yours</b> &mdash; <code>human-review</code> and <code>staging</code> are waiting on you and no agent can move them; <code>tester-review</code> is finished work waiting on a tester. Status is <b>self-reported</b>: agents often skip <code>in-progress</code> entirely, so a low count there means the field went unset, not that nothing is running. The active-branch tile above is the reliable one, and <code>done</code> is cross-checked against git by the sweep below.</p>
+    <div id="tickets-body" hidden>
+      <div class="filters" id="filters"></div>
+      <div class="rows" id="rows"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Worktrees</h2>
+    <p class="sub">One checked-out directory per branch. <b>Uncommitted</b> counts files that exist in that tree and nowhere else &mdash; a closed ticket whose code is still only here is not safe yet.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Branch</th><th>Uncommitted</th><th>Commits ahead of staging</th><th>Path</th></tr></thead>
+        <tbody id="trees"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+const ORDER = ['in-progress', 'blocked', 'tester-review', 'human-review',
+               'staging', 'shipped', 'todo', 'done', 'review', 'unknown'];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cvar = s => `var(--${ORDER.includes(s) ? s : 'unknown'})`;
+
+const tickets = (DATA.tickets || []).slice().sort((a, b) => {
+  const d = ORDER.indexOf(a.status) - ORDER.indexOf(b.status);
+  return d !== 0 ? d : b.num - a.num;
+});
+
+/* ---- header meta, and how old this is ----
+   Reloading the browser re-renders the same generated bytes, so the page has
+   to be honest about its own age or it will show a stale board as if it were
+   current. It checks on load and again every half minute, because a tab left
+   open all afternoon is exactly where this misleads. */
+const kb = (DATA.boardBytes / 1024).toFixed(0);
+const when = new Date(DATA.generatedAt);
+
+function ago(ms) {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return 'just now';
+  if (m === 1) return '1 minute ago';
+  if (m < 60) return `${m} minutes ago`;
+  const h = Math.floor(m / 60);
+  if (h === 1) return '1 hour ago';
+  if (h < 24) return `${h} hours ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? '1 day ago' : `${d} days ago`;
+}
+
+const staleEl = document.getElementById('stale');
+function freshness() {
+  const age = Date.now() - when.getTime();
+  document.getElementById('meta').innerHTML =
+    `<b>${tickets.length}</b> tickets &middot; board <b>${DATA.boardLines}</b> lines, <b>${kb}KB</b><br>` +
+    `generated ${esc(ago(age))}`;
+
+  if (age > 5 * 60 * 1000) {
+    staleEl.hidden = false;
+    staleEl.innerHTML =
+      `<span><b>This is a snapshot from ${esc(ago(age))}.</b> Reloading the page will not update it — ` +
+      `the data is baked in. Run this, then reload:</span> <code>node tools/board-dashboard.mjs</code>`;
+  } else {
+    staleEl.hidden = true;
+  }
+}
+freshness();
+setInterval(freshness, 30000);
+
+/* ---- what needs a human ---- */
+const blocked = tickets.filter(t => t.status === 'blocked');
+const testerR = tickets.filter(t => t.status === 'tester-review');
+const humanR  = tickets.filter(t => t.status === 'human-review');
+const onStg   = tickets.filter(t => t.status === 'staging');
+const shipped = tickets.filter(t => t.status === 'shipped');
+const legacy  = tickets.filter(t => t.status === 'review');
+const dirty   = (DATA.worktrees || []).filter(w => w.dirty > 0);
+const notes = [];
+if (blocked.length) notes.push(`<b>${blocked.length} blocked.</b> Blocked means a person must act &mdash; no agent can clear it.`);
+if (humanR.length)  notes.push(`<b>${humanR.length} at human-review &mdash; yours.</b> A tester passed these; they are waiting on you to commit and merge. No agent can move them.`);
+if (onStg.length)   notes.push(`<b>${onStg.length} on staging &mdash; yours.</b> Deployed and waiting for you to try it on the staging URL.`);
+if (shipped.length) notes.push(`<b>${shipped.length} shipped &mdash; live in production</b>, worktree not yet cleaned. An agent can clear these.`);
+if (testerR.length) notes.push(`<b>${testerR.length} at tester-review.</b> Dispatch a tester; only a tester passes a ticket to human-review.`);
+if (legacy.length)  notes.push(`<b>${legacy.length} still on the retired status "review".</b> Split on 2026-09-24 into tester-review and human-review &mdash; each needs reading, not guessing: ${legacy.map(t => t.id).join(', ')}.`);
+if (dirty.length)   notes.push(`<b>${dirty.length} worktree${dirty.length === 1 ? '' : 's'} with uncommitted work.</b> That code exists in one place only.`);
+if (DATA.boardLines > 900) notes.push(`<b>The board is ${DATA.boardLines} lines.</b> Long enough that an agent's read can be truncated.`);
+
+const strip = document.getElementById('strip');
+if (notes.length) {
+  strip.hidden = false;
+  strip.innerHTML = `<h2>Needs a person</h2><ul>${notes.map(n => `<li>${n}</li>`).join('')}</ul>`;
+}
+
+/* ---- counts ----
+   `active branches` comes FIRST and is derived from the filesystem, not from
+   the board. Ticket status is self-reported: an agent sets `in-progress` only
+   if it remembers to, and mostly it does not — this dashboard once showed
+   0 in-progress while seven branches held uncommitted work. A count of
+   branches actually holding changes cannot be forgotten into being wrong, so
+   it is the honest measure of how much is running at once. */
+const active = (DATA.worktrees || []).filter(w => w.dirty > 0 && w.branch !== 'staging').length;
+document.getElementById('tiles').innerHTML =
+  `<div class="tile" style="--c:var(--accent)"><div class="n">${active}</div><div class="k">active branches</div></div>` +
+  ORDER
+    .filter(s => (DATA.byStatus || {})[s])
+    .map(s => `<div class="tile" style="--c:${cvar(s)}"><div class="n">${DATA.byStatus[s]}</div><div class="k">${esc(s)}</div></div>`)
+    .join('');
+
+/* ---- features, above the ticket table ----
+   Rendered from data already grouped by tools/board-features.mjs; this page
+   derives nothing about feature status itself, so the CLI (`node
+   tools/board.mjs features`) and this dashboard can never say something
+   different about the same feature. */
+const FEATURE_STATUS_C = {
+  blocked: 'var(--blocked)',
+  'in progress': 'var(--in-progress)',
+  'in testing': 'var(--tester-review)',
+  'awaiting your approval': 'var(--human-review)',
+  'on staging': 'var(--staging)',
+  shipped: 'var(--shipped)',
+};
+const features = DATA.features || [];
+const featuresSection = document.getElementById('features-section');
+if (features.length || DATA.unfeaturedCount) {
+  featuresSection.hidden = false;
+  const rows = features.map(f => `
+    <div class="row">
+      <div class="id"></div>
+      <div class="t"><b>${esc(f.slug)}</b><small>${f.count} ticket${f.count === 1 ? '' : 's'}</small></div>
+      <div class="chip" style="--c:${FEATURE_STATUS_C[f.status] || 'var(--unknown)'}">${esc(f.statusLine || f.status)}</div>
+    </div>
+    <div class="row"><div class="id"></div><div class="t ${f.nextAction === '--' ? 'feat-dash' : 'feat-you'}">${f.nextAction === '--' ? '—' : `YOU: ${esc(f.nextAction)}`}</div><div></div></div>`);
+  if (DATA.unfeaturedCount) {
+    rows.push(`<div class="row"><div class="id"></div><div class="t calm">(no feature) &mdash; ${DATA.unfeaturedCount} ticket${DATA.unfeaturedCount === 1 ? '' : 's'}</div><div></div></div>`);
+  }
+  document.getElementById('features').innerHTML = rows.join('');
+}
+
+/* ---- collapsed ticket table ---- */
+const ticketsToggle = document.getElementById('tickets-toggle');
+const ticketsBody = document.getElementById('tickets-body');
+ticketsToggle.addEventListener('click', () => {
+  const open = ticketsToggle.getAttribute('aria-expanded') === 'true';
+  ticketsToggle.setAttribute('aria-expanded', String(!open));
+  ticketsBody.hidden = open;
+});
+
+/* ---- filters, remembered per viewer ---- */
+let active = 'all';
+try { active = localStorage.getItem('arsenal-board-filter') || 'all'; } catch {}
+const present = ORDER.filter(s => (DATA.byStatus || {})[s]);
+if (!['all', ...present].includes(active)) active = 'all';
+
+document.getElementById('filters').innerHTML =
+  ['all', ...present].map(s =>
+    `<button type="button" data-f="${esc(s)}" aria-pressed="${s === active}">${esc(s)}${s === 'all' ? ` (${tickets.length})` : ` (${DATA.byStatus[s]})`}</button>`
+  ).join('');
+
+function draw() {
+  const shown = active === 'all' ? tickets : tickets.filter(t => t.status === active);
+  document.getElementById('rows').innerHTML = shown.length ? shown.map(t => {
+    const bits = [t.owner && `owner ${t.owner}`, t.branch && `branch ${t.branch}`, t.dependsOn && `after ${t.dependsOn}`]
+      .filter(Boolean).join('  ·  ');
+    return `<div class="row">
+      <div class="id">${esc(t.id)}</div>
+      <div class="t"><b>${esc(t.title)}</b>${bits ? `<small>${esc(bits)}</small>` : ''}</div>
+      <div class="chip" style="--c:${cvar(t.status)}">${esc(t.status)}</div>
+    </div>`;
+  }).join('') : `<div class="row"><div class="id"></div><div class="t calm">Nothing with that status.</div><div></div></div>`;
+
+  for (const b of document.querySelectorAll('.filters button')) {
+    b.setAttribute('aria-pressed', String(b.dataset.f === active));
+  }
+}
+
+document.getElementById('filters').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  active = b.dataset.f;
+  try { localStorage.setItem('arsenal-board-filter', active); } catch {}
+  draw();
+});
+draw();
+
+/* ---- stalled, from the sweep ----
+   Kinds are ordered by how much they deserve a person's attention, and the
+   colour follows the kind rather than a ticket status, because "shipped but
+   never closed" is not a status the board can hold. */
+const KIND_C = {
+  'IN STAGING, NOT CLOSED': 'var(--tester-review)',
+  'READY TO CLEAN':      'var(--shipped)',
+  'CLOSED, NOT SHIPPED': 'var(--human-review)',
+  'WAITING ON YOU':      'var(--human-review)',
+  'RETIRED STATUS':      'var(--blocked)',
+  'NO DRIVER':           'var(--blocked)',
+  'NOTHING IN FLIGHT':   'var(--todo)',
+  'UNCOMMITTED':         'var(--tester-review)',
+  'NEEDS A PERSON':      'var(--blocked)',
+};
+/* ---- the environment pipeline ---- */
+const pipeline = DATA.pipeline || [];
+const pipeEl = document.getElementById('pipeline');
+if (pipeline.some(p => p.commits.length)) {
+  document.getElementById('pipeline-section').hidden = false;
+  pipeEl.innerHTML = pipeline.filter(p => p.commits.length || p.missing).map(p => {
+    const slugs = p.featureSlugs || [];
+    const unfeatured = p.unfeaturedIds || [];
+    const feats = (slugs.length || unfeatured.length)
+      ? `<div class="pipe-ids">${slugs.map(s => `<code>${esc(s)}</code>`).join(' ')}${unfeatured.length ? ` <code class="calm">(no feature: ${unfeatured.map(esc).join(', ')})</code>` : ''}</div>`
+      : '<div class="pipe-ids"><i>No commit in this range declares a ticket id.</i></div>';
+    const subjects = p.commits.slice(0, 40).map(c =>
+      `<div class="pipe-c"><code>${esc(c.sha)}</code> ${esc(c.subject)}</div>`).join('');
+    const more = p.commits.length > 40 ? `<div class="pipe-c"><i>and ${p.commits.length - 40} more</i></div>` : '';
+    return `<div class="row pipe">
+      <div class="pipe-head"><b>${esc(p.label)}</b> &mdash; ${p.commits.length} commit${p.commits.length === 1 ? '' : 's'}, ${slugs.length} feature${slugs.length === 1 ? '' : 's'}</div>
+      <div class="pipe-why">${esc(p.meaning)}${p.missing ? ` (${esc(p.missing)})` : ''}</div>
+      ${feats}${subjects}${more}
+    </div>`;
+  }).join('');
+}
+
+const sweep = DATA.sweep;
+const stalledSection = document.getElementById('stalled-section');
+if (sweep === null) {
+  stalledSection.hidden = false;
+  document.getElementById('stalled').innerHTML =
+    `<div class="row"><div class="id"></div><div class="t calm">The sweep could not run when this page was generated, so nothing here is claimed either way. Run <code>node tools/board-sweep.mjs</code> directly.</div><div></div></div>`;
+} else if (sweep.length) {
+  stalledSection.hidden = false;
+  document.getElementById('stalled').innerHTML = sweep.map(f => `
+    <div class="row">
+      <div class="id">${esc(f.id)}</div>
+      <div class="t"><b>${esc(f.title)}</b><small>${esc(f.why)}  →  ${esc(f.action)}</small></div>
+      <div class="chip" style="--c:${KIND_C[f.kind] || 'var(--unknown)'}">${esc(f.kind)}</div>
+    </div>`).join('');
+}
+
+/* ---- worktrees ---- */
+document.getElementById('trees').innerHTML = (DATA.worktrees || []).map(w => `
+  <tr>
+    <td class="br">${esc(w.branch)}</td>
+    <td class="num ${w.dirty ? 'warn' : 'calm'}">${w.dirty ? w.dirty + ' file' + (w.dirty === 1 ? '' : 's') : 'clean'}</td>
+    <td class="num ${w.ahead ? '' : 'calm'}">${w.ahead || '—'}</td>
+    <td class="path calm">${esc(w.path)}</td>
+  </tr>`).join('');
+
+document.getElementById('foot').innerHTML =
+  `Snapshot, not a live view &mdash; re-run <code>node tools/board-dashboard.mjs</code> to refresh. ` +
+  `Board: <code>${esc(DATA.boardPath)}</code>`;
+</script>
+</body>
+</html>
