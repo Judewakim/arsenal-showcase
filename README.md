@@ -19,20 +19,7 @@ The full platform is closed-source because it holds regulated client data and pr
 | Stack | AWS Amplify Gen 2 · AppSync (GraphQL) · DynamoDB · Lambda · Cognito · KMS · S3 · EventBridge Scheduler · CDK |
 | Integrations | Stripe · Twilio (voice + SMS) · Google Calendar · Calendly · Slack · lead-vendor webhooks |
 
-```mermaid
-flowchart LR
-  Browser["Browser SPA<br/>(vanilla JS, strict CSP)"] -->|sign-in| Cognito["Cognito<br/>(TOTP MFA, admins group)"]
-  Browser -->|GraphQL + JWT| AppSync["AppSync<br/>owner-scoped auth rules"]
-  AppSync --> Lambdas["28 Lambdas"]
-  Lambdas --> DDB[("DynamoDB<br/>PITR + deletion protection")]
-  Lambdas -->|GenerateDataKey / Decrypt| KMS["KMS PHI key<br/>(annual rotation)"]
-  Lambdas --> Audit[("Hash-chained<br/>audit log")]
-  Lambdas --> S3[("S3 attachments<br/>SSE-KMS, owner prefixes")]
-  Stripe["Stripe webhook"] -->|signature verified| Lambdas
-  Twilio["Twilio voice / SMS"] -->|signature verified| Lambdas
-  Vendor["Lead vendor"] -->|split-token auth| Lambdas
-  Lambdas --> Sched["EventBridge Scheduler<br/>(SMS sends, crons)"]
-```
+<p align="center"><img src="docs/architecture.svg" alt="The Arsenal production architecture" width="100%"></p>
 
 ---
 

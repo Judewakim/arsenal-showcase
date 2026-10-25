@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 720" width="1240" height="720" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#15803d"/>
+    </marker>
+    <style>
+      .t  { font-size: 17px; font-weight: 700; fill: #0f172a; }
+      .s  { font-size: 13px; fill: #475569; }
+      .h  { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; fill: #64748b; }
+      .lb { font-size: 12px; fill: #334155; }
+      .lg { font-size: 12px; fill: #15803d; font-weight: 600; }
+      .ln { stroke: #475569; stroke-width: 2; fill: none; }
+      .lng{ stroke: #15803d; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+    </style>
+  </defs>
+
+  <rect width="1240" height="720" rx="18" fill="#ffffff"/>
+  <text x="40" y="52" font-size="26" font-weight="800" fill="#0f172a">The Arsenal — production architecture</text>
+  <text x="40" y="78" class="s">AWS Amplify Gen 2 · every sensitive field encrypted per record · every change hash-chained</text>
+
+  <!-- zone labels -->
+  <text x="40"  y="128" class="h">CLIENT</text>
+  <text x="300" y="128" class="h">IDENTITY &amp; API</text>
+  <text x="560" y="128" class="h">COMPUTE</text>
+  <text x="850" y="128" class="h">DATA &amp; SECURITY</text>
+
+  <!-- Browser -->
+  <rect x="40" y="240" width="200" height="110" rx="12" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="140" y="280" text-anchor="middle" class="t">Browser app</text>
+  <text x="140" y="304" text-anchor="middle" class="s">vanilla JS, no build step</text>
+  <text x="140" y="324" text-anchor="middle" class="s">strict CSP</text>
+
+  <!-- Cognito -->
+  <rect x="300" y="150" width="200" height="100" rx="12" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+  <text x="400" y="188" text-anchor="middle" class="t">Cognito</text>
+  <text x="400" y="212" text-anchor="middle" class="s">TOTP MFA · admins group</text>
+  <text x="400" y="232" text-anchor="middle" class="s">60-min tokens</text>
+
+  <!-- AppSync -->
+  <rect x="300" y="300" width="200" height="110" rx="12" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+  <text x="400" y="340" text-anchor="middle" class="t">AppSync GraphQL</text>
+  <text x="400" y="364" text-anchor="middle" class="s">owner-scoped rules</text>
+  <text x="400" y="384" text-anchor="middle" class="s">sensitive writes via Lambda</text>
+
+  <!-- Lambdas -->
+  <rect x="560" y="200" width="230" height="260" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+  <text x="675" y="240" text-anchor="middle" class="t">28 Lambda functions</text>
+  <text x="675" y="270" text-anchor="middle" class="s">secure record writes</text>
+  <text x="675" y="292" text-anchor="middle" class="s">billing · SMS · voice</text>
+  <text x="675" y="314" text-anchor="middle" class="s">calendar sync · lead ingest</text>
+  <text x="675" y="336" text-anchor="middle" class="s">agency hierarchy · admin</text>
+  <line x1="590" y1="360" x2="760" y2="360" stroke="#fed7aa"/>
+  <text x="675" y="386" text-anchor="middle" class="s">ownership checked in code</text>
+  <text x="675" y="408" text-anchor="middle" class="s">least-privilege IAM per function</text>
+  <text x="675" y="430" text-anchor="middle" class="s">confused-deputy trust pins</text>
+
+  <!-- Data column -->
+  <rect x="850" y="140" width="350" height="70" rx="12" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="870" y="170" class="t">DynamoDB</text>
+  <text x="870" y="194" class="s">40 models · PITR · deletion protection</text>
+
+  <rect x="850" y="226" width="350" height="70" rx="12" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+  <text x="870" y="256" class="t">KMS PHI key</text>
+  <text x="870" y="280" class="s">envelope encryption · AES-256-GCM per field</text>
+
+  <rect x="850" y="312" width="350" height="70" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="870" y="342" class="t">Audit log</text>
+  <text x="870" y="366" class="s">per-owner hash chain · atomic appends</text>
+
+  <rect x="850" y="398" width="350" height="70" rx="12" fill="#ecfeff" stroke="#0891b2" stroke-width="2"/>
+  <text x="870" y="428" class="t">S3 attachments</text>
+  <text x="870" y="452" class="s">SSE-KMS · versioned · per-owner prefixes</text>
+
+  <rect x="850" y="484" width="350" height="70" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="870" y="514" class="t">EventBridge Scheduler</text>
+  <text x="870" y="538" class="s">scheduled SMS · sync and reminder jobs</text>
+
+  <!-- External webhooks -->
+  <text x="400" y="617" text-anchor="end" class="h">INBOUND WEBHOOKS</text>
+  <rect x="420" y="580" width="130" height="64" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <text x="485" y="619" text-anchor="middle" class="t">Stripe</text>
+  <rect x="610" y="580" width="130" height="64" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <text x="675" y="619" text-anchor="middle" class="t">Twilio</text>
+  <rect x="800" y="580" width="150" height="64" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <text x="875" y="619" text-anchor="middle" class="t">Lead vendor</text>
+  <text x="675" y="676" text-anchor="middle" class="lg">signature or hashed token verified before any work</text>
+
+  <!-- arrows -->
+  <path class="ln" d="M240,275 C270,275 270,200 298,200" marker-end="url(#arr)"/>
+  <text x="206" y="218" class="lb">sign in</text>
+  <path class="ln" d="M240,320 L298,350" marker-end="url(#arr)"/>
+  <text x="200" y="372" class="lb">GraphQL + JWT</text>
+  <path class="ln" d="M500,355 L558,330" marker-end="url(#arr)"/>
+
+  <path class="ln" d="M790,240 C820,240 820,175 848,175" marker-end="url(#arr)"/>
+  <path class="ln" d="M790,280 C820,280 820,261 848,261" marker-end="url(#arr)"/>
+  <path class="ln" d="M790,330 C820,330 820,347 848,347" marker-end="url(#arr)"/>
+  <path class="ln" d="M790,380 C820,380 820,433 848,433" marker-end="url(#arr)"/>
+  <path class="ln" d="M790,430 C820,430 820,519 848,519" marker-end="url(#arr)"/>
+
+  <path class="lng" d="M485,580 C485,520 610,520 620,462" marker-end="url(#arrg)"/>
+  <path class="lng" d="M675,580 L675,462" marker-end="url(#arrg)"/>
+  <path class="lng" d="M875,580 C875,520 740,520 730,462" marker-end="url(#arrg)"/>
+</svg>
